@@ -1,0 +1,225 @@
+// function.php 
+
+<?php
+// Exit if accessed directly
+if ( !defined( 'ABSPATH' ) ) exit;
+
+// BEGIN ENQUEUE PARENT ACTION
+// AUTO GENERATED - Do not modify or remove comment markers above or below:
+
+if ( !function_exists( 'chld_thm_cfg_locale_css' ) ):
+    function chld_thm_cfg_locale_css( $uri ){
+        if ( empty( $uri ) && is_rtl() && file_exists( get_template_directory() . '/rtl.css' ) )
+            $uri = get_template_directory_uri() . '/rtl.css';
+        return $uri;
+    }
+endif;
+add_filter( 'locale_stylesheet_uri', 'chld_thm_cfg_locale_css' );
+         
+if ( !function_exists( 'child_theme_configurator_css' ) ):
+    function child_theme_configurator_css() {
+        wp_enqueue_style( 'chld_thm_cfg_child', trailingslashit( get_stylesheet_directory_uri() ) . 'style.css', array( 'twenty-twenty-one-style','twenty-twenty-one-style','twenty-twenty-one-print-style' ) );
+    }
+endif;
+add_action( 'wp_enqueue_scripts', 'child_theme_configurator_css', 99 );
+
+// END ENQUEUE PARENT ACTION
+// 
+// 
+// //init the meta box
+add_action( 'after_setup_theme', 'custom_postimage_setup' );
+function custom_postimage_setup(){
+    add_action( 'add_meta_boxes', 'custom_postimage_meta_box' );
+    add_action( 'save_post', 'custom_postimage_meta_box_save' );
+}
+
+function custom_postimage_meta_box(){
+
+    //on which post types should the box appear?
+    $post_types = array('post','page','product');
+    foreach($post_types as $pt){
+        add_meta_box('custom_postimage_meta_box',__( ' Add More Featured Images', 'yourdomain'),'custom_postimage_meta_box_func',$pt,'side','low');
+    }
+}
+
+function custom_postimage_meta_box_func($post){
+
+    //an array with all the images (ba meta key). The same array has to be in custom_postimage_meta_box_save($post_id) as well.
+    $meta_keys = array('second_featured_image','third_featured_image','forth_featured_image','five_featured_image','sixth_fetaured_image','seven_fetaured_image','eight_fetauredimage','ninth_featuredimage');
+
+    foreach($meta_keys as $meta_key){
+        $image_meta_val=get_post_meta( $post->ID, $meta_key, true);
+        ?>
+        <div class="custom_postimage_wrapper" id="<?php echo $meta_key; ?>_wrapper" style="margin-bottom:20px;">
+            <img src="<?php echo ($image_meta_val!=''?wp_get_attachment_image_src( $image_meta_val)[0]:''); ?>" style="width:100%;display: <?php echo ($image_meta_val!=''?'block':'none'); ?>" alt="">
+            <a class="addimage button" onclick="custom_postimage_add_image('<?php echo $meta_key; ?>');"><?php _e('add image','yourdomain'); ?></a><br>
+            <a class="removeimage" style="color:#a00;cursor:pointer;display: <?php echo ($image_meta_val!=''?'block':'none'); ?>" onclick="custom_postimage_remove_image('<?php echo $meta_key; ?>');"><?php _e('remove image','yourdomain'); ?></a>
+            <input type="hidden" name="<?php echo $meta_key; ?>" id="<?php echo $meta_key; ?>" value="<?php echo $image_meta_val; ?>" />
+        </div>
+    <?php } ?>
+    <script>
+    function custom_postimage_add_image(key){
+
+        var $wrapper = jQuery('#'+key+'_wrapper');
+
+        custom_postimage_uploader = wp.media.frames.file_frame = wp.media({
+            title: '<?php _e('select image','yourdomain'); ?>',
+            button: {
+                text: '<?php _e('select image','yourdomain'); ?>'
+            },
+            multiple: false
+        });
+        custom_postimage_uploader.on('select', function() {
+
+            var attachment = custom_postimage_uploader.state().get('selection').first().toJSON();
+            var img_url = attachment['url'];
+            var img_id = attachment['id'];
+            $wrapper.find('input#'+key).val(img_id);
+            $wrapper.find('img').attr('src',img_url);
+            $wrapper.find('img').show();
+            $wrapper.find('a.removeimage').show();
+        });
+        custom_postimage_uploader.on('open', function(){
+            var selection = custom_postimage_uploader.state().get('selection');
+            var selected = $wrapper.find('input#'+key).val();
+            if(selected){
+                selection.add(wp.media.attachment(selected));
+            }
+        });
+        custom_postimage_uploader.open();
+        return false;
+    }
+
+    function custom_postimage_remove_image(key){
+        var $wrapper = jQuery('#'+key+'_wrapper');
+        $wrapper.find('input#'+key).val('');
+        $wrapper.find('img').hide();
+        $wrapper.find('a.removeimage').hide();
+        return false;
+    }
+    </script>
+    <?php
+    wp_nonce_field( 'custom_postimage_meta_box', 'custom_postimage_meta_box_nonce' );
+}
+
+function custom_postimage_meta_box_save($post_id){
+
+    if ( ! current_user_can( 'edit_posts', $post_id ) ){ return 'not permitted'; }
+
+    if (isset( $_POST['custom_postimage_meta_box_nonce'] ) && wp_verify_nonce($_POST['custom_postimage_meta_box_nonce'],'custom_postimage_meta_box' )){
+
+        //same array as in custom_postimage_meta_box_func($post)
+        $meta_keys = array('second_featured_image','third_featured_image','forth_featured_image','five_featured_image','sixth_fetaured_image','seven_fetaured_image','eight_fetauredimage','ninth_featuredimage');
+        foreach($meta_keys as $meta_key){
+            if(isset($_POST[$meta_key]) && intval($_POST[$meta_key])!=''){
+                update_post_meta( $post_id, $meta_key, intval($_POST[$meta_key]));
+            }else{
+                update_post_meta( $post_id, $meta_key, '');
+            }
+        }
+    }
+}
+// function.php end
+
+
+
+<?php
+/* Template Name: Product */
+
+get_header();
+
+
+?>
+  <div id="post-<?php the_ID(); ?>" <?php post_class(); ?>>
+  <div class="all_product_row">
+  <?php
+    $args = array('post_type' => 'product', 'posts_per_page' => -1);
+$loop = new WP_Query($args);
+
+while ($loop->have_posts()) : $loop->the_post();
+?>
+    
+  
+      <div class="product_col">
+        <div class="product_col_content">
+          <div class="product__media_item">
+            <?php
+            $post_id = get_the_ID();
+
+            // Retrieve the image IDs from post meta
+            $second_featured_image_id = get_post_meta($post_id, 'second_featured_image', true);
+            $third_featured_image_id = get_post_meta($post_id, 'third_featured_image', true);
+            $forth_featured_image_id = get_post_meta($post_id, 'forth_featured_image', true);
+            $fifth_featured_image_id = get_post_meta($post_id, 'five_featured_image', true);
+            $six_featured_image_id = get_post_meta($post_id, 'sixth_fetaured_image', true);
+            $seven_featured_image_id = get_post_meta($post_id, 'seven_fetaured_image', true);
+            $eight_featured_image_id = get_post_meta($post_id, 'eight_fetauredimage', true);
+            $nine_featured_image_id = get_post_meta($post_id, 'ninth_featuredimage', true);
+
+            
+            // Get the image URLs based on the retrieved IDs
+            $second_featured_image_url = wp_get_attachment_image_src($second_featured_image_id, 'full')[0];
+            $third_featured_image_url = wp_get_attachment_image_src($third_featured_image_id, 'full')[0];
+            $forth_featured_image_url =wp_get_attachment_image_src($forth_featured_image_id, 'full')[0];
+            $fifth_featured_image_url =wp_get_attachment_image_src($fifth_featured_image_id, 'full')[0];
+            $six_featured_image_url =wp_get_attachment_image_src($six_featured_image_id, 'full')[0];
+            $seven_featured_image_url =wp_get_attachment_image_src($seven_featured_image_id, 'full')[0];
+            $eight_featured_image_url =wp_get_attachment_image_src($eight_featured_image_id, 'full')[0];
+            $nine_featured_image_url =wp_get_attachment_image_src($nine_featured_image_id, 'full')[0];
+            ?>
+            <?php if ($second_featured_image_url) : ?>
+    <img src="<?php echo esc_url($second_featured_image_url); ?>" alt="Second Featured Image">
+<?php endif; ?>
+
+<?php if ($third_featured_image_url) : ?>
+    <img src="<?php echo esc_url($third_featured_image_url); ?>" alt="Third Featured Image">
+<?php endif; ?>
+<?php if ($forth_featured_image_url) : ?>
+    <img src="<?php echo esc_url($forth_featured_image_url); ?>" alt="Third Featured Image">
+<?php endif; ?>
+<?php if ($fifth_featured_image_url) : ?>
+    <img src="<?php echo esc_url($fifth_featured_image_url); ?>" alt="Third Featured Image">
+<?php endif; ?>
+<?php if ($six_featured_image_url) : ?>
+    <img src="<?php echo esc_url($six_featured_image_url); ?>" alt="Third Featured Image">
+<?php endif; ?>
+<?php if ($seven_featured_image_url) : ?>
+    <img src="<?php echo esc_url($seven_featured_image_url); ?>" alt="Third Featured Image">
+<?php endif; ?>
+<?php if ($eight_featured_image_url) : ?>
+    <img src="<?php echo esc_url($eight_featured_image_url); ?>" alt="Third Featured Image">
+<?php endif; ?>
+<?php if ($nine_featured_image_url) : ?>
+    <img src="<?php echo esc_url($nine_featured_image_url); ?>" alt="Third Featured Image">
+<?php endif; ?>
+          </div>
+          <div class="product_cat"> </div>
+          <h3><a title="<?php the_title(); ?>" href="<?php the_permalink() ?>" rel="bookmark"><?php the_title(); ?> </a></h3>
+          <div class="product_disc">
+             <?php echo wp_trim_words(get_the_content(), 20); ?>
+          </div>
+          <div class="social_links">
+            <ul>
+              <li>
+                <a href="https://facebook.com" class="linkedin">
+                  <i aria-hidden="true" class="icon icon-linkedin"></i>
+                </a>
+              </li>
+              <li>
+                <a href="https://api.whatsapp.com/send/?text=ultrapackindia+-+https%3A%2F%2Fgo.shr.lc%2F44Llgyz&amp;type=custom_url&amp;app_absent=0" aria-label="Whatsapp" class="whatsapp">
+                  <i aria-hidden="true" class="fab fa-whatsapp"></i>
+                </a>
+              </li>
+            </ul>
+          </div>
+        </div>
+      </div>
+      <?php endwhile; ?>
+    </div>
+    
+  </div>
+
+
+<?php
+get_footer();
+?>
