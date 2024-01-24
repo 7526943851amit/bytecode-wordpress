@@ -1,0 +1,116 @@
+<?php
+/**
+ * Plugin Name: Amit 
+ * Plugin URI: https://www.your-site.com/
+ * Description: Import data csv 
+ * Version: 0.1
+ * Author: Amit sharma
+ * Author URI: https://amit-netlify.app/
+ **/
+
+ add_action('admin_menu', 'ai_tools_menu');
+function ai_tools_menu() {
+    add_menu_page('csv plugin', 'csv plugin', 'manage_options', 'my-plugin', 'csv_plugin_page');
+}
+
+function csv_plugin_page() {
+    ?>
+    <div class="wrap">
+        <h1>Import CSV for chapter</h1>
+        <form method="post" enctype="multipart/form-data" action="">
+            <?php
+            if (isset($_POST['import_csv'])) {
+                
+                if (!empty($_FILES['csv_file']['name'])) {
+                    process_csv_data($_FILES['csv_file']['tmp_name']);
+                } else {
+                    echo '<div class="error"><p>Please select a CSV file.</p></div>';
+                }
+            }
+            ?>
+            <input type="file" name="csv_file" id="csv_file">
+            <input type="submit" name="import_csv" class="button button-primary" value="Import CSV">
+        </form>
+    </div>
+    <?php
+}
+ 
+function process_csv_data($file_path) {
+    // $csv_file_path = plugin_dir_path(__FILE__) . 'gagansir.csv';
+
+    if (($handle = fopen($file_path, 'r')) !== FALSE) {
+        fgetcsv($handle, 1000, ',');
+
+        while (($data = fgetcsv($handle, 1000, ',')) !== FALSE) {
+            $book_id = $data[1];
+            $chapter_number = $data[2];
+            $lsb_translation = $data[4];
+            $original_language = $data[5];
+            $commentary = $data[6];
+
+            // check   same book  and chapter
+            $args_existing = array(
+                'post_type'   => 'books',
+                'post_parent' => $book_id,
+                'title'       => $chapter_number,
+            );
+            $existing_posts_with_same_title = get_posts($args_existing);
+
+            if (!empty($existing_posts_with_same_title)) {
+              
+                $existing_chapter_post = $existing_posts_with_same_title[0];
+
+                
+                $paragraphs = get_field('paragraphs', $existing_chapter_post->ID);
+
+                $paragraph = array(
+                    'para' => array(
+                        'english_content' => $lsb_translation,
+                        'hebrew_content' => $original_language,
+                        'commentary' => $commentary,
+                    )
+                );
+
+                $paragraphs[] = $paragraph;
+                update_field('paragraphs', $paragraphs, $existing_chapter_post->ID);
+
+                // echo "Data appended to existing Chapter post for Book_Id: $book_id, Chapter_Number: $chapter_number.<br>";
+            } else {
+                
+                $book_post = get_post($book_id);
+
+                if ($book_post && $book_post->post_type == 'books' && $book_post->post_status == 'publish') {
+                
+                    $chapter_post_args = array(
+                        'post_title'   => $chapter_number,
+                        'post_type'    => 'books',
+                        'post_status'  => 'publish',
+                        'post_parent'  => $book_id,
+                    );
+
+                    $chapter_post_id = wp_insert_post($chapter_post_args);
+
+                    $paragraphs = get_field('paragraphs', $chapter_post_id);
+                    $paragraph = array(
+                        'para' => array(
+                            'english_content' => $lsb_translation,
+                            'hebrew_content' => $original_language,
+                            'commentary' => $commentary,
+                        )
+                    );
+
+                    $paragraphs[] = $paragraph;
+                    update_field('paragraphs', $paragraphs, $chapter_post_id);
+
+                    // echo "Book_Id: $book_id, Chapter_Number: $chapter_number - Chapter post created successfully.<br>";
+                  //  echo "Successfully imported all data";
+                } else {
+                    echo "Book_Id: $book_id, Chapter_Number: $chapter_number - Chapter post not created. Book post is not published.<br>";
+                }
+            }
+        }
+        echo "Successfully imported all data";
+        fclose($handle);
+    }
+}
+
