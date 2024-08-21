@@ -1,10 +1,10 @@
 function industries_list_shortcode() {
-    ob_start(); 
+    ob_start(); // Start output buffering
 
-
+    // Query to get all 'industry' posts
     $args = array(
-        'post_type' => 'industry', 
-        'posts_per_page' => -1, 
+        'post_type' => 'industry', // Replace with your custom post type
+        'posts_per_page' => -1, // Fetch all posts
     );
     $query = new WP_Query($args);
     
@@ -15,20 +15,19 @@ function industries_list_shortcode() {
         if ($query->have_posts()) : 
             while ($query->have_posts()) : $query->the_post(); 
                 // Get ACF fields
-                $image = get_field('image'); // Assuming 'image' is the field name
-                $title = get_field('title'); // Assuming 'title' is the field name
+                $image = get_field('image'); // Assuming 'image' is the ACF field name for the image
         ?>
             <div class="i_single_item">
                 <figure>
                     <a href="<?php the_permalink(); ?>"> <!-- Link to single page -->
                         <?php if ($image) : ?>
-                            <img src="<?php echo esc_url($image['url']); ?>" alt="<?php echo esc_attr($title); ?>">
+                            <img src="<?php echo esc_url($image['url']); ?>" alt="<?php the_title(); ?>">
                         <?php else : ?>
                             <img src="https://bytecode.bytecodeapps.in/wp-content/uploads/2024/08/default-image.webp" alt="Default Image">
                         <?php endif; ?>
                     </a>
                 </figure>
-                <h5><?php echo esc_html($title); ?></h5>
+                <h5><?php the_title(); ?></h5> <!-- Display the post title -->
             </div>
         <?php 
             endwhile; 
