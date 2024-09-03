@@ -1,0 +1,21 @@
+document.addEventListener('DOMContentLoaded', function() {
+    // Open the popup
+    document.querySelectorAll('.bytecode-btn').forEach(function(button) {
+        button.addEventListener('click', function(event) {
+            event.preventDefault();
+            document.querySelector('.apply-now').style.display = 'block';
+        });
+    });
+
+    // Close the popup
+    document.querySelector('.apply-now-close').addEventListener('click', function() {
+        document.querySelector('.apply-now').style.display = 'none';
+    });
+
+    // Close when clicking outside of the popup content
+    document.querySelector('.apply-now').addEventListener('click', function(event) {
+        if (event.target === this) {
+            this.style.display = 'none';
+        }
+    });
+});
