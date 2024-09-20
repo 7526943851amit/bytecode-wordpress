@@ -1,0 +1,89 @@
+<?php 
+/* Template Name: Blogs */
+get_header();
+?>
+
+<div class="blog_page">
+<div class="blog_heading">
+        <h2>Lorem ipsum DOLOR <span>sit amet</span>
+        </h2>
+        <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do
+        eiusmod tempor incididunt ut labore et dolore magna aliqua</p>
+    </div>
+    <div class="blog_card_list">
+        <div class="blog_container">
+            <div class="blog_list">
+            <?php
+              $paged = (get_query_var('paged')) ? get_query_var('paged') : 1;
+            $args = array(
+                'post_type' => 'post', 
+                'posts_per_page' => 6, 
+                'paged' => $paged 
+            );
+            $blogs_query = new WP_Query($args);
+            if ($blogs_query->have_posts()) :
+                while ($blogs_query->have_posts()) : $blogs_query->the_post(); 
+                if (has_post_thumbnail()) {
+                    $featured_img_url = get_the_post_thumbnail_url(get_the_ID(), 'full'); 
+                } 
+                           
+                $title = wp_trim_words(get_the_title(), 10, '...');
+                    $content = wp_trim_words(get_the_content(), 10, '...'); 
+                    $post_day = get_the_date('d'); 
+                    $post_month = get_the_date('M'); 
+            ?>
+            <div class="blog_card">
+                <div class="dateBx p-2">
+                <p><?php echo esc_html($post_day); ?><br><span><?php echo esc_html($post_month); ?></span></p>
+
+                </div>
+                <div class="blog_card_img">
+                <a href='<?php the_permalink(); ?>'> <img src="<?php echo esc_url($featured_img_url); ?>" class="img-responsive" width="456px" height="321px" alt=""></a>
+                </div>
+                <div class="card-body">
+                    <div class="card-body-upper-content">
+                    <h2 class="primaryColor mb-4 tabSubhead"><a href="<?php the_permalink(); ?>"><?php  echo $title; ?></a></h2>
+                    <p><?php echo $content; ?></p> 
+                    </div>
+                    <a class="successBtn" href="<?php the_permalink(); ?>">Read More</a>
+                </div>
+            </div>
+        <?php endwhile;
+$pagination_args = array(
+    'total' => $blogs_query->max_num_pages,
+    'prev_text' => '<svg class="feather feather-chevron-right" fill="none" height="24" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg"><polyline points="9 18 15 12 9 6"/></svg>',
+    'next_text' => '<svg class="feather feather-chevron-right" fill="none" height="24" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg"><polyline points="9 18 15 12 9 6"/></svg>',
+    'mid_size' => 1, 
+    'end_size' => 2, 
+    'type' => 'plain', 
+);
+
+echo '<div class="pagination">';
+echo paginate_links($pagination_args);
+echo '</div>';
+        wp_reset_postdata();
+        else :
+        echo '<p>No Blogs posts found.</p>';
+        endif;
+        ?>  
+                      
+        </div>
+    </div>
+</div>
+
+<!-- <div class="blog-author">
+    <img src="https://www.cogitate.us/wp-content/uploads/2023/12/pamshot-96x96.jpg" alt="" class="author-image">
+    <div class="author-details">
+        <h2 class="author-name">Pam Simpson</h2>
+        <p class="author-bio">Pam brings a decade of insurance content creation to her role as Director of Marketing and Communications at Cogitate. Her passion for insurance technology and ecosystem partnerships stems from her former role as Director of Content Strategy and Research with Carrier Management and Insurance Journal working with stakeholders across the insurance value chain. She has authored numerous eBooks and research reports, hosted and produced webinars, and developed podcasts for the P&amp;C Insurance Industry over her tenure.
+Find Pam on LinkedIn: https://www.linkedin.com/in/pamhsimpson/</p>
+    </div>
+</div> -->
+
+
+
+<?php
+get_footer(); 
+?>
+
+
